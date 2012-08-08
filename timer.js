@@ -1,133 +1,54 @@
-(function(win, doc, undefined){
-	win.timer = function(options){
-		return new timer.fn.init(options);
-	};
+function noop(){}
 
-	timer.fn = timer.prototype = {
-		init: function(options){
-		
-			options || (options = {});
-		
-			this.onUpdate =	 typeof options.onUpdate == 'function'?	 options.onUpdate 	: false;
-			this.onStart =	 typeof options.onStart == 'function'?	 options.onStart 	: false;
-			this.onStop	=	 typeof options.onStop == 'function'?	 options.onStop 	: false;
-		},
-	
-		start_time: 0,
-		elapsed: 0,
-		delay: 100,
-	
-		start: function(){
-			this.halt = 0;
-			this.count();
-			return this.elapsed;
-		},
-	
-		stop: function(){
-			this.halt = 1;
-			
-			return this.elapsed;
-		},
-	
-		reset: function(){
-			this.stop();
-			return this.elapsed = 0;
-		},
-		
-		update: function(){
-			
-		},
-		
-		count: function(){
-			var start = new Date().getTime(),
-				delta = 0,
-				delay = this.delay,
-				elapsed = 0;
+Timer = function(options){
+	if(!(this instanceof Timer))
+		return new Timer(options);
 
-			function loop(){
-				delta += delay;
-				elapsed = new Date().getTime() - start;
-				diff = elapsed - delta;
-				if(this.onUpdate){
-					this.onUpdate(elapsed);
-				}
-				this.halt || window.setTimeout(loop, (delay - diff));
-			}
-			loop();
-		}
-	};
+	this.elapsed = 0;
 
-	timer.fn.init.prototype = timer.prototype;
-})(window, window.document);
-
-
-/*
-var counter = function(options){
-
-	var start = new Date().getTime(),
-		delta = 0,
-		delay = 50,
-		elapsed = 0,
-		onUpdate = options && options.onUpdate || function(elapsed){
-			console.log(elapsed);
-			return 1;
-		},
-		onStart = options && options.onStart || false,
-		onStop = options && options.onStop || false;
-
-	function loop(){
-		delta += delay;
-		elapsed = new Date().getTime() - start;
-		diff = elapsed - delta;
-		onUpdate(elapsed) && window.setTimeout(loop, (delay - diff)) || onStop(elapsed);
-	}
-	
-	if(onStart){
-		onStart(elapsed);
-	}
-	
-	loop();
+	for(var k in options)
+		this[k] = options[k];
 };
-//*/
 
-/*
-var timer = {
-	start_time: 0,
-	elapsed: {},
+Timer.prototype = {
+	onStop  : noop,
+	onTick  : noop,
+	onStart : noop,
+	onReset : noop,
+
 	start: function(){
-		this.start_time = new Date().getTime();
-		return this;
-	},
-	stop: function(){
-		this.elapsed = (new Date().getTime() - this.start_time) / 1000;
+		this.tick();
 		return this.elapsed;
 	},
-	countdown: function(stop_at, callback, on_update){
-		this.start();
-		
-		var delta = 0,
-			delay = 100,
-			elapsed = 0,
-			halt = stop_at * 1000,
-			start = this.start_time,
-			update = typeof on_update == 'function' ? on_update : false;
-		
+	stop: function(){
+		clearTimeout(this.timer);
+		this.onStop(this.elapsed);
+		return this.elapsed;
+	},
+	tick: function(){
+		var timer = this
+		  , start = +new Date
+		  , delta = 0
+		  , delay = this.delay
+		  , prev  = this.elapsed
+		  , diff
+		  , elapsed
+		;//var
 
+		this.onStart();
+		function loop(){
+			delta += delay;
+			elapsed = +new Date - start;
+			diff = elapsed - delta;
+			timer.onTick(timer.elapsed = prev + elapsed);
+			timer.timer = setTimeout(loop, (delay - diff));
+		}
+		loop();
+	},
+	reset: function(){
+		var elapsed = this.elapsed;
+		this.elapsed = 0;
+		this.onReset(elapsed);
+		return elapsed;
 	}
 };
-//*/
-/*
-var start = new Date().getTime(),
-    time = 0,
-    elapsed = '0.0';
-function instance()
-{
-    time += 100;
-    elapsed = Math.floor(time / 100) / 10;
-    if(Math.round(elapsed) == elapsed) { elapsed += '.0'; }
-    document.title = elapsed;
-    var diff = (new Date().getTime() - start) - time;
-    window.setTimeout(instance, (100 - diff));
-}
-window.setTimeout(instance, 100);
-//*/
